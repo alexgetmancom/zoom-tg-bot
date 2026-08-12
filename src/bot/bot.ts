@@ -456,7 +456,8 @@ function meetingActionsKeyboard(record: MeetingRecord, locale: BotLocale): Inlin
 
 function renderRequestTimeLines(config: AppConfig, request: MeetingRequest, locale: BotLocale): string[] {
   const alexTime = formatDateTime(request.startDt, config.TZ, locale);
-  if (!request.clientTimeZone || !request.clientLocation) return [alexTime];
+  if (!request.clientTimeZone || !request.clientLocation)
+    return [t(locale, "common.alex-time", { time: htmlEscape(alexTime) })];
   const clientTime = formatDateTime(request.startDt, request.clientTimeZone, locale);
   return [
     t(locale, "common.alex-time", { time: htmlEscape(alexTime) }),
@@ -468,19 +469,7 @@ function renderRequestTimeLines(config: AppConfig, request: MeetingRequest, loca
 }
 
 function renderRequestTimeDescription(config: AppConfig, request: MeetingRequest, locale: BotLocale): string {
-  const alexTime = formatDateTime(request.startDt, config.TZ, locale);
-  if (!request.clientTimeZone || !request.clientLocation) return alexTime;
-  const clientTime = formatDateTime(request.startDt, request.clientTimeZone, locale);
-  return [
-    t(locale, "common.alex-time-short", { time: alexTime }),
-    t(locale, "common.client-time-short", { location: request.clientLocation, time: clientTime }),
-  ].join(" · ");
-}
-
-function renderOwnerMeetingTimeLines(config: AppConfig, record: MeetingRecord, locale: BotLocale): string[] {
-  if (record.sourceRequest.clientTimeZone && record.sourceRequest.clientLocation)
-    return renderRequestTimeLines(config, record.sourceRequest, locale);
-  return [t(locale, "meeting.start", { start: formatDateTime(record.startDt, config.TZ, locale) })];
+  return renderRequestTimeLines(config, request, locale).join("\n");
 }
 
 function renderRequestSummary(config: AppConfig, request: MeetingRequest, locale: BotLocale): string {
@@ -527,7 +516,7 @@ export function renderOwnerMeetingMessage(
     "",
     `${template.emoji} ${htmlEscape(t(locale, template.titleKey))}`,
     t(locale, "meeting.topic", { topic: htmlEscape(record.topic) }),
-    ...renderOwnerMeetingTimeLines(config, record, locale),
+    ...renderRequestTimeLines(config, record.sourceRequest, locale),
     t(locale, "meeting.duration", { duration: record.durationMinutes }),
   ];
   if (record.inviteeEmails.length)

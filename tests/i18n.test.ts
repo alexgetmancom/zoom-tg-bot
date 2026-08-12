@@ -17,8 +17,9 @@ describe("bot language", () => {
     expect(formatDateTime(new Date("2026-08-13T09:00:00Z"), "Europe/Moscow", "ru")).toBe("13.08 в 12:00");
     expect(formatDateTime(new Date("2026-08-13T09:00:00Z"), "America/New_York", "ru")).toBe("13.08 в 05:00");
     expect(formatDateTime(new Date("2026-12-13T09:00:00Z"), "America/New_York", "ru")).toBe("13.12 в 04:00");
+    expect(t("ru", "common.alex-time", { time: "13.08 в 12:00" })).toBe("Время Москва: 13.08 в 12:00");
     expect(t("ru", "common.client-time", { location: "Майами", time: "13.08 в 05:00" })).toBe(
-      "Местное время клиента (Майами): 13.08 в 05:00",
+      "Время Майами: 13.08 в 05:00",
     );
   });
 });

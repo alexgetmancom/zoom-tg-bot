@@ -28,9 +28,35 @@ describe("meeting time display", () => {
     });
 
     const message = renderMeetingMessage(config, record, "ru");
-    expect(message).toContain("Местное время Алексея: 31.12 в 12:00");
-    expect(message).toContain("Местное время клиента (Майами): 31.12 в 04:00");
+    expect(message).toContain("Время Москва: 31.12 в 12:00");
+    expect(message).toContain("Время Майами: 31.12 в 04:00");
     expect(message).not.toContain("Савелий - Майами");
+    database.close();
+  });
+
+  test("shows only Moscow time when no client city is provided", () => {
+    const database = openDatabase(":memory:");
+    migrateDatabase(database);
+    const request = parseInlineQuery("31.12.2099 12:00 Савелий", config, "ru");
+    const record = saveMeeting(database, {
+      zoomMeetingId: "456",
+      zoomMeetingUuid: null,
+      topic: request.topic,
+      joinUrl: "https://zoom.test/join",
+      startDt: request.startDt,
+      timezoneName: config.TZ,
+      durationMinutes: request.durationMinutes,
+      templateKey: request.templateKey,
+      inviteeEmails: request.inviteeEmails,
+      status: "scheduled",
+      sourceRequest: request,
+      calendarPushRequested: false,
+      recordingStatus: "disabled",
+    });
+
+    const message = renderMeetingMessage(config, record, "ru");
+    expect(message).toContain("Время Москва: 31.12 в 12:00");
+    expect(message).not.toContain("Время Майами:");
     database.close();
   });
 });
