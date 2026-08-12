@@ -36,7 +36,7 @@ import {
   saveUserLocale,
   updateMeetingAfterReschedule,
 } from "../storage/database.js";
-import { formatDateTime } from "../time.js";
+import { formatDateTimeLong } from "../time.js";
 import { ZoomClient } from "../zoom.js";
 import type { AppContext, BotRuntime } from "./context.js";
 
@@ -393,7 +393,7 @@ function buildInlineResult(runtime: BotRuntime, request: MeetingRequest, locale:
     ? ` · ${t(locale, request.inviteeEmails.length === 1 ? "common.invitee" : "common.invitees", { count: request.inviteeEmails.length })}`
     : "";
   const recurringText = request.recurrence ? ` · ${t(locale, "common.recurring")}` : "";
-  const description = `${renderRequestTimeDescription(runtime.config, request, locale)} · ${t(locale, "common.minute", { count: request.durationMinutes })}${inviteeText}${recurringText}`;
+  const description = `${renderRequestTimeDescription(runtime.config, request, locale)}\n${t(locale, "meeting.minutes", { count: request.durationMinutes })}${inviteeText}${recurringText}`;
   const content: InputTextMessageContent = {
     message_text: renderRequestSummary(runtime.config, request, locale),
     parse_mode: "HTML",
@@ -455,10 +455,10 @@ function meetingActionsKeyboard(record: MeetingRecord, locale: BotLocale): Inlin
 }
 
 function renderRequestTimeLines(config: AppConfig, request: MeetingRequest, locale: BotLocale): string[] {
-  const alexTime = formatDateTime(request.startDt, config.TZ, locale);
+  const alexTime = formatDateTimeLong(request.startDt, config.TZ, locale);
   if (!request.clientTimeZone || !request.clientLocation)
     return [t(locale, "common.alex-time", { time: htmlEscape(alexTime) })];
-  const clientTime = formatDateTime(request.startDt, request.clientTimeZone, locale);
+  const clientTime = formatDateTimeLong(request.startDt, request.clientTimeZone, locale);
   return [
     t(locale, "common.alex-time", { time: htmlEscape(alexTime) }),
     t(locale, "common.client-time", {
@@ -474,10 +474,12 @@ function renderRequestTimeDescription(config: AppConfig, request: MeetingRequest
 
 function renderRequestSummary(config: AppConfig, request: MeetingRequest, locale: BotLocale): string {
   const lines = [
-    `<b>${htmlEscape(request.topic)}</b>`,
-    `<i>${t(locale, "common.zoom-meeting")}</i>`,
+    t(locale, "meeting.header", {
+      topic: htmlEscape(request.topic),
+      duration: request.durationMinutes,
+    }),
+    "",
     ...renderRequestTimeLines(config, request, locale),
-    t(locale, "common.minute", { count: request.durationMinutes }),
   ];
   const recurrence = formatRecurrence(locale, request.recurrence);
   if (recurrence) lines.push(htmlEscape(recurrence));
@@ -492,13 +494,15 @@ export function renderMeetingMessage(
 ): string {
   if (record.status !== "scheduled") return `${t(locale, "meeting.cancelled")}${note ? `\n\n${htmlEscape(note)}` : ""}`;
   const lines = [
-    `<b>${htmlEscape(record.topic)}</b>`,
-    `<i>${t(locale, "common.zoom-meeting")}</i>`,
+    t(locale, "meeting.header", {
+      topic: htmlEscape(record.topic),
+      duration: record.durationMinutes,
+    }),
+    "",
     ...renderRequestTimeLines(config, record.sourceRequest, locale),
-    t(locale, "common.minute", { count: record.durationMinutes }),
   ];
   const recurrence = formatRecurrence(locale, record.sourceRequest.recurrence);
-  if (recurrence) lines.push(htmlEscape(recurrence));
+  if (recurrence) lines.push("", htmlEscape(recurrence));
   lines.push("", `<a href="${htmlEscape(record.joinUrl)}">${t(locale, "button.open")}</a>`);
   if (note) lines.push("", htmlEscape(note));
   return lines.join("\n");

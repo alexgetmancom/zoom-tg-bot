@@ -28,8 +28,9 @@ describe("meeting time display", () => {
     });
 
     const message = renderMeetingMessage(config, record, "ru");
-    expect(message).toContain("Время Москва: 31.12 в 12:00");
-    expect(message).toContain("Время Майами: 31.12 в 04:00");
+    expect(message).toBe(
+      '<b>Савелий</b> • 60 минут\n\nВремя Москва: 31 декабря 12:00\nВремя Майами: 31 декабря 04:00\n\n<a href="https://zoom.test/join">Zoom ссылка</a>',
+    );
     expect(message).not.toContain("Савелий - Майами");
     database.close();
   });
@@ -55,8 +56,9 @@ describe("meeting time display", () => {
     });
 
     const message = renderMeetingMessage(config, record, "ru");
-    expect(message).toContain("Время Москва: 31.12 в 12:00");
-    expect(message).not.toContain("Время Майами:");
+    expect(message).toBe(
+      '<b>Савелий</b> • 60 минут\n\nВремя Москва: 31 декабря 12:00\n\n<a href="https://zoom.test/join">Zoom ссылка</a>',
+    );
     database.close();
   });
 });

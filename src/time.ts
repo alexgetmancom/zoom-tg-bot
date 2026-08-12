@@ -64,6 +64,16 @@ export function formatDateTime(
   return `${datePart} ${connector} ${String(parts.hour).padStart(2, "0")}:${String(parts.minute).padStart(2, "0")}`;
 }
 
+export function formatDateTimeLong(date: Date, timeZone: string, locale: BotLocale = DEFAULT_BOT_LOCALE): string {
+  const parts = partsFor(date, timeZone);
+  const datePart = new Intl.DateTimeFormat(locale === "ru" ? "ru-RU" : "en-GB", {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "long",
+  }).format(new Date(Date.UTC(parts.year, parts.month - 1, parts.day)));
+  return `${datePart} ${String(parts.hour).padStart(2, "0")}:${String(parts.minute).padStart(2, "0")}`;
+}
+
 export function formatDateTimePlain(date: Date, timeZone: string): string {
   const parts = partsFor(date, timeZone);
   return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}T${String(parts.hour).padStart(2, "0")}:${String(parts.minute).padStart(2, "0")}:${String(parts.second).padStart(2, "0")}`;
