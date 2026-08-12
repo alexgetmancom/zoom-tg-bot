@@ -47,6 +47,8 @@ export type MeetingRequestData = {
   invitee_emails: string[];
   recurrence: RecurrenceData | null;
   source_query: string;
+  client_time_zone?: string | null;
+  client_location?: string | null;
 };
 
 export class MeetingRequest {
@@ -59,6 +61,8 @@ export class MeetingRequest {
     public inviteeEmails: string[],
     public recurrence: Recurrence | null = null,
     public sourceQuery = "",
+    public clientTimeZone: string | null = null,
+    public clientLocation: string | null = null,
   ) {}
 
   get recurrenceLabel(): string | null {
@@ -83,6 +87,8 @@ export class MeetingRequest {
           }
         : null,
       source_query: this.sourceQuery,
+      client_time_zone: this.clientTimeZone,
+      client_location: this.clientLocation,
     };
   }
 
@@ -106,6 +112,8 @@ export class MeetingRequest {
       [...payload.invitee_emails],
       recurrence,
       payload.source_query,
+      payload.client_time_zone ?? null,
+      payload.client_location ?? null,
     );
   }
 }

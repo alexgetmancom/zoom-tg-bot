@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { loadConfig } from "../src/config.js";
-import { extractDuration, normalizeMonthDates, parseInlineQuery } from "../src/parser.js";
+import { extractClientTimeZone, extractDuration, normalizeMonthDates, parseInlineQuery } from "../src/parser.js";
 
 const config = loadConfig({ BOT_MODE: "http-only", TZ: "Europe/Moscow" });
 
@@ -24,6 +24,20 @@ describe("inline query parser", () => {
     const request = parseInlineQuery("13 августа 12:00 Тест", config);
     expect(request.actionType).toBe("scheduled");
     expect(request.topic).toBe("Тест");
+  });
+
+  test("splits a supported client city from the topic and keeps Alex's time as the input", () => {
+    const request = parseInlineQuery("31.12.2099 12:00 Савелий - Майами", config);
+    expect(request.topic).toBe("Савелий");
+    expect(request.clientLocation).toBe("Майами");
+    expect(request.clientTimeZone).toBe("America/New_York");
+    expect(request.startDt.toISOString()).toBe("2099-12-31T09:00:00.000Z");
+  });
+
+  test("leaves an unknown suffix in the topic", () => {
+    expect(extractClientTimeZone("31.12.2099 12:00 Савелий - Неизвестный город").text).toBe(
+      "31.12.2099 12:00 Савелий - Неизвестный город",
+    );
   });
 
   test("parses recurring weekly meetings", () => {

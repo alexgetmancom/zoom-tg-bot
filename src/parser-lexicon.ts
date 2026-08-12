@@ -96,6 +96,34 @@ export const TEMPLATE_ALIASES: Record<"quick" | "lesson" | "call", string[]> = {
   call: ["call", "meeting", "созвон"],
 };
 
+export const CLIENT_TIME_ZONES: Record<string, string> = {
+  майами: "America/New_York",
+  miami: "America/New_York",
+  "нью-йорк": "America/New_York",
+  "нью йорк": "America/New_York",
+  "new york": "America/New_York",
+  nyc: "America/New_York",
+  "лос-анджелес": "America/Los_Angeles",
+  "лос анджелес": "America/Los_Angeles",
+  "los angeles": "America/Los_Angeles",
+  la: "America/Los_Angeles",
+  чикаго: "America/Chicago",
+  chicago: "America/Chicago",
+  "тель-авив": "Asia/Jerusalem",
+  "тель авив": "Asia/Jerusalem",
+  "tel aviv": "Asia/Jerusalem",
+  израиль: "Asia/Jerusalem",
+  israel: "Asia/Jerusalem",
+  иерусалим: "Asia/Jerusalem",
+  jerusalem: "Asia/Jerusalem",
+  лондон: "Europe/London",
+  london: "Europe/London",
+  берлин: "Europe/Berlin",
+  berlin: "Europe/Berlin",
+  дубай: "Asia/Dubai",
+  dubai: "Asia/Dubai",
+};
+
 export const DURATION_HOUR_UNITS = ["h", "hr", "hrs", "ч"];
 
 export const SUMMARY_EMAIL_MARKERS = ["summary", "meeting summary", "ai companion", "итоги", "конспект", "резюме"];

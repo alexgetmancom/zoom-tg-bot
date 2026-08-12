@@ -1,3 +1,5 @@
+import { type BotLocale, DEFAULT_BOT_LOCALE } from "./locale.js";
+
 export type LocalDateTimeParts = {
   year: number;
   month: number;
@@ -48,12 +50,18 @@ export function zonedDateTimeToDate(parts: LocalDateTimeParts, timeZone: string)
   return new Date(utcGuess - (renderedAsUtc - utcGuess));
 }
 
-export function formatDateTime(date: Date, timeZone: string, withYear = false): string {
+export function formatDateTime(
+  date: Date,
+  timeZone: string,
+  locale: BotLocale = DEFAULT_BOT_LOCALE,
+  withYear = false,
+): string {
   const parts = partsFor(date, timeZone);
   const datePart = withYear
     ? `${String(parts.day).padStart(2, "0")}.${String(parts.month).padStart(2, "0")}.${parts.year}`
     : `${String(parts.day).padStart(2, "0")}.${String(parts.month).padStart(2, "0")}`;
-  return `${datePart} at ${String(parts.hour).padStart(2, "0")}:${String(parts.minute).padStart(2, "0")}`;
+  const connector = locale === "ru" ? "в" : "at";
+  return `${datePart} ${connector} ${String(parts.hour).padStart(2, "0")}:${String(parts.minute).padStart(2, "0")}`;
 }
 
 export function formatDateTimePlain(date: Date, timeZone: string): string {

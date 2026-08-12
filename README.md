@@ -11,6 +11,7 @@ The runtime is TypeScript on Bun inside Docker Compose. It combines grammY, Hono
 - Upcoming meeting list, history, reminders, follow-ups, cancellation, duplication, and rescheduling
 - Official Zoom summary delivery with an optional IMAP fallback
 - Optional transcript delivery when cloud recording is enabled
+- Client local-time preview from a supported city suffix such as `- Miami`
 - SQLite history with completed-meeting timestamps and delivered summary text
 - English interface by default; Russian is available in bot settings
 

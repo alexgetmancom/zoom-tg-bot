@@ -7,6 +7,7 @@
 - Runtime process: one Bun container for Telegram, HTTP, Zoom webhooks, reminders, and artifact workers
 - Default bot language: English
 - Optional bot language: Russian, stored in the `user_settings` SQLite table
+- Meeting input timezone: `Europe/Moscow` from `TZ`; supported client city suffixes are stored in the pending request and meeting source request
 - Database: `/home/deploy/telemostbot/data/bot_state.sqlite3`, mounted into the container and kept outside git
 - Completed meetings: `completed_at` and the exact Telegram summary document are stored in the `meetings` table
 - Production env: `/home/deploy/telemostbot/.env`

@@ -20,7 +20,18 @@ describe("SQLite state", () => {
   test("migrates, stores and reads pending actions", () => {
     const database = openDatabase(":memory:");
     migrateDatabase(database);
-    const request = new MeetingRequest("scheduled", "call", "Demo", new Date("2099-12-31T12:00:00Z"), 60, []);
+    const request = new MeetingRequest(
+      "scheduled",
+      "call",
+      "Demo",
+      new Date("2099-12-31T12:00:00Z"),
+      60,
+      [],
+      null,
+      "",
+      "America/New_York",
+      "Майами",
+    );
     savePendingAction(database, new PendingAction("token", request, new Date("2099-01-01T00:00:00Z")));
     expect(popPendingAction(database, "token")?.request.topic).toBe("Demo");
     expect(popPendingAction(database, "token")).toBeNull();
@@ -30,7 +41,18 @@ describe("SQLite state", () => {
   test("stores a meeting record in the compatible SQLite schema", () => {
     const database = openDatabase(":memory:");
     migrateDatabase(database);
-    const request = new MeetingRequest("scheduled", "call", "Demo", new Date("2099-12-31T12:00:00Z"), 60, []);
+    const request = new MeetingRequest(
+      "scheduled",
+      "call",
+      "Demo",
+      new Date("2099-12-31T12:00:00Z"),
+      60,
+      [],
+      null,
+      "",
+      "America/New_York",
+      "Майами",
+    );
     const record = saveMeeting(database, {
       zoomMeetingId: "123",
       zoomMeetingUuid: null,
@@ -52,6 +74,8 @@ describe("SQLite state", () => {
     const stored = getMeeting(database, record.recordId);
     expect(stored?.summaryText).toBe("# Demo summary");
     expect(stored?.completedAt).toBeInstanceOf(Date);
+    expect(stored?.sourceRequest.clientTimeZone).toBe("America/New_York");
+    expect(stored?.sourceRequest.clientLocation).toBe("Майами");
     database.close();
   });
 

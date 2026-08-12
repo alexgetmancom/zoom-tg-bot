@@ -22,6 +22,15 @@ The parser accepts English and the existing Russian date, weekday, relative-date
 
 Typing only prepares inline results. A Zoom meeting is created after the Confirm button is pressed.
 
+Enter the meeting time in Alex's configured timezone. To show a client's local time, append a supported city after ` - `:
+
+```text
+13 August 12:00 Savely - Miami
+14 August 11:00 Lesson - Tel Aviv
+```
+
+The topic excludes the city suffix. The preview shows Alex's time and the client's local time. Miami uses `America/New_York`, and Tel Aviv uses `Asia/Jerusalem`; daylight-saving changes are calculated automatically for the meeting date. The supported aliases currently cover Miami, New York, Los Angeles, Chicago, Tel Aviv, Israel, Jerusalem, London, Berlin, and Dubai.
+
 ## Commands
 
 - `/start` or `/help` — help and examples

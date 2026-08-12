@@ -393,7 +393,7 @@ function buildInlineResult(runtime: BotRuntime, request: MeetingRequest, locale:
     ? ` · ${t(locale, request.inviteeEmails.length === 1 ? "common.invitee" : "common.invitees", { count: request.inviteeEmails.length })}`
     : "";
   const recurringText = request.recurrence ? ` · ${t(locale, "common.recurring")}` : "";
-  const description = `${formatDateTime(request.startDt, runtime.config.TZ)} · ${t(locale, "common.minute", { count: request.durationMinutes })}${inviteeText}${recurringText}`;
+  const description = `${renderRequestTimeDescription(runtime.config, request, locale)} · ${t(locale, "common.minute", { count: request.durationMinutes })}${inviteeText}${recurringText}`;
   const content: InputTextMessageContent = {
     message_text: renderRequestSummary(runtime.config, request, locale),
     parse_mode: "HTML",
@@ -454,11 +454,41 @@ function meetingActionsKeyboard(record: MeetingRecord, locale: BotLocale): Inlin
   return keyboard;
 }
 
+function renderRequestTimeLines(config: AppConfig, request: MeetingRequest, locale: BotLocale): string[] {
+  const alexTime = formatDateTime(request.startDt, config.TZ, locale);
+  if (!request.clientTimeZone || !request.clientLocation) return [alexTime];
+  const clientTime = formatDateTime(request.startDt, request.clientTimeZone, locale);
+  return [
+    t(locale, "common.alex-time", { time: htmlEscape(alexTime) }),
+    t(locale, "common.client-time", {
+      location: htmlEscape(request.clientLocation),
+      time: htmlEscape(clientTime),
+    }),
+  ];
+}
+
+function renderRequestTimeDescription(config: AppConfig, request: MeetingRequest, locale: BotLocale): string {
+  const alexTime = formatDateTime(request.startDt, config.TZ, locale);
+  if (!request.clientTimeZone || !request.clientLocation) return alexTime;
+  const clientTime = formatDateTime(request.startDt, request.clientTimeZone, locale);
+  return [
+    t(locale, "common.alex-time-short", { time: alexTime }),
+    t(locale, "common.client-time-short", { location: request.clientLocation, time: clientTime }),
+  ].join(" · ");
+}
+
+function renderOwnerMeetingTimeLines(config: AppConfig, record: MeetingRecord, locale: BotLocale): string[] {
+  if (record.sourceRequest.clientTimeZone && record.sourceRequest.clientLocation)
+    return renderRequestTimeLines(config, record.sourceRequest, locale);
+  return [t(locale, "meeting.start", { start: formatDateTime(record.startDt, config.TZ, locale) })];
+}
+
 function renderRequestSummary(config: AppConfig, request: MeetingRequest, locale: BotLocale): string {
   const lines = [
     `<b>${htmlEscape(request.topic)}</b>`,
     `<i>${t(locale, "common.zoom-meeting")}</i>`,
-    `${formatDateTime(request.startDt, config.TZ)} · ${t(locale, "common.minute", { count: request.durationMinutes })}`,
+    ...renderRequestTimeLines(config, request, locale),
+    t(locale, "common.minute", { count: request.durationMinutes }),
   ];
   const recurrence = formatRecurrence(locale, request.recurrence);
   if (recurrence) lines.push(htmlEscape(recurrence));
@@ -475,7 +505,8 @@ export function renderMeetingMessage(
   const lines = [
     `<b>${htmlEscape(record.topic)}</b>`,
     `<i>${t(locale, "common.zoom-meeting")}</i>`,
-    `${formatDateTime(record.startDt, config.TZ)} · ${t(locale, "common.minute", { count: record.durationMinutes })}`,
+    ...renderRequestTimeLines(config, record.sourceRequest, locale),
+    t(locale, "common.minute", { count: record.durationMinutes }),
   ];
   const recurrence = formatRecurrence(locale, record.sourceRequest.recurrence);
   if (recurrence) lines.push(htmlEscape(recurrence));
@@ -496,7 +527,7 @@ export function renderOwnerMeetingMessage(
     "",
     `${template.emoji} ${htmlEscape(t(locale, template.titleKey))}`,
     t(locale, "meeting.topic", { topic: htmlEscape(record.topic) }),
-    t(locale, "meeting.start", { start: formatDateTime(record.startDt, config.TZ) }),
+    ...renderOwnerMeetingTimeLines(config, record, locale),
     t(locale, "meeting.duration", { duration: record.durationMinutes }),
   ];
   if (record.inviteeEmails.length)

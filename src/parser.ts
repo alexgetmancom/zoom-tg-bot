@@ -2,6 +2,7 @@ import type { AppConfig } from "./config.js";
 import { type BotLocale, DEFAULT_BOT_LOCALE } from "./locale.js";
 import { MeetingRequest, type MeetingTemplate, type Recurrence, UserFacingError } from "./models.js";
 import {
+  CLIENT_TIME_ZONES,
   DURATION_HOUR_UNITS,
   DURATION_RE,
   MONTH_MAP,
@@ -21,6 +22,32 @@ const DATE_TOKEN_RE = /\b\d{1,2}[./-]\d{1,2}(?:[./-]\d{2,4})?\b/;
 
 function normalizeSpaces(text: string): string {
   return text.replace(/\s+/g, " ").trim();
+}
+
+function normalizeClientLocation(value: string): string {
+  return value
+    .toLocaleLowerCase("ru-RU")
+    .replaceAll("ё", "е")
+    .replace(/[‐‑‒–—]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function extractClientTimeZone(text: string): {
+  text: string;
+  clientLocation: string | null;
+  clientTimeZone: string | null;
+} {
+  const match = text.match(/\s+-\s+(.+?)\s*$/u);
+  const location = match?.[1]?.trim();
+  if (!match || !location) return { text, clientLocation: null, clientTimeZone: null };
+  const clientTimeZone = CLIENT_TIME_ZONES[normalizeClientLocation(location)];
+  if (!clientTimeZone) return { text, clientLocation: null, clientTimeZone: null };
+  return {
+    text: normalizeSpaces(text.slice(0, match.index)),
+    clientLocation: location,
+    clientTimeZone,
+  };
 }
 
 export function normalizeRelativeDates(text: string, now: Date, timeZone: string): string {
@@ -225,7 +252,8 @@ export function parseInlineQuery(
   const rawQuery = normalizeSpaces(query);
   if (!rawQuery) throw new UserFacingError("error.empty-query");
 
-  const selected = selectTemplate(rawQuery, config);
+  const client = extractClientTimeZone(rawQuery);
+  const selected = selectTemplate(client.text, config);
   const recurrent = parseRecurrence(selected.text, config);
   const emailResult = extractEmails(recurrent.text);
   if (LEFTOVER_EMAIL_RE.test(emailResult.text)) throw new UserFacingError("error.invalid-email");
@@ -243,6 +271,8 @@ export function parseInlineQuery(
       emailResult.emails,
       recurrent.recurrence,
       rawQuery,
+      client.clientTimeZone,
+      client.clientLocation,
     );
   }
 
@@ -269,5 +299,7 @@ export function parseInlineQuery(
     emailResult.emails,
     null,
     rawQuery,
+    client.clientTimeZone,
+    client.clientLocation,
   );
 }
