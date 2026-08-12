@@ -2,7 +2,7 @@
 
 ## What it is
 
-`zoom-tg-bot` is a single-user Telegram inline bot that creates meetings for one Zoom host. The TypeScript/Bun process owns Telegram, the health and Zoom webhook endpoints, reminders, and post-meeting artifact workers.
+`zoom-tg-bot` is a single-user Telegram inline bot that creates meetings for one Zoom host. The TypeScript/Bun process inside Docker owns Telegram, the health and Zoom webhook endpoints, reminders, and post-meeting artifact workers.
 
 ## Telegram usage
 
@@ -78,24 +78,17 @@ bun run start:export -- --from 2026-04-01 --to 2026-04-10
 
 ## Production
 
-The VPS service is `zoom-telegram-bot.service` and runs one Bun process from `/home/deploy/telemostbot`:
+The VPS production runtime is one Docker Compose `app` container from `/home/deploy/telemostbot`. The container reads secrets from `/home/deploy/telemostbot/.env`, stores SQLite in `/home/deploy/telemostbot/data`, and mounts `/home/deploy/meeting-notes` for Git note export. The host port remains `8799`.
 
-```ini
-[Service]
-User=deploy
-WorkingDirectory=/home/deploy/telemostbot
-EnvironmentFile=-/home/deploy/telemostbot/.env
-ExecStart=/usr/local/bin/bun /home/deploy/telemostbot/dist/src/index.js
-Restart=always
-RestartSec=5
-```
-
-The service must be healthy before a deploy is considered complete:
+The production container must be healthy after a deploy:
 
 ```bash
-sudo systemctl is-active zoom-telegram-bot.service
+cd /home/deploy/telemostbot
+docker compose up -d --build
+docker compose ps
 curl -fsS http://127.0.0.1:8799/healthz
 curl -fsS http://127.0.0.1:8799/readyz
+docker compose logs --tail=100 app
 ```
 
 ## Boundaries

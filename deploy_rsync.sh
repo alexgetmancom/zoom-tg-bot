@@ -15,6 +15,7 @@ rsync -az --delete \
   --exclude 'venv' \
   --exclude '__pycache__' \
   --exclude '.pytest_cache' \
+  --exclude 'data' \
   --exclude 'exports' \
   --exclude 'meeting-notes' \
   --exclude 'bot_state.sqlite3' \

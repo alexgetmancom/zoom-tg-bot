@@ -2,7 +2,7 @@
 
 Personal Telegram inline bot for creating Zoom meetings, delivering official Zoom summaries, and exporting meeting notes.
 
-The runtime is TypeScript on Bun. It combines grammY, Hono, Zod, Bun SQLite, Zoom Server-to-Server OAuth, and one background worker process.
+The runtime is TypeScript on Bun inside Docker Compose. It combines grammY, Hono, Zod, Bun SQLite, Zoom Server-to-Server OAuth, and one background worker process.
 
 ## Features
 
