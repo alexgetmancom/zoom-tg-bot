@@ -1,0 +1,26 @@
+services:
+  app:
+    build: .
+    image: zoom-tg-bot:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      BIND_HOST: 0.0.0.0
+      DATABASE_URL: /app/data/bot_state.sqlite3
+      NODE_ENV: production
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - bun
+        - -e
+        - 'fetch("http://127.0.0.1:8080/healthz").then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))'
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

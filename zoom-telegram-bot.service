@@ -1,0 +1,15 @@
+[Unit]
+Description=Zoom Telegram Bot (TypeScript)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=deploy
+WorkingDirectory=/home/deploy/telemostbot
+EnvironmentFile=-/home/deploy/telemostbot/.env
+ExecStart=/usr/local/bin/bun /home/deploy/telemostbot/dist/src/index.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
