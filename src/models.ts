@@ -158,10 +158,8 @@ export type MeetingRecord = {
   summarySentAt: Date | null;
   transcriptFailedAt: Date | null;
   summaryFailedAt: Date | null;
-  gitNotePath: string | null;
-  gitCommitSha: string | null;
-  gitExportedAt: Date | null;
-  gitExportFailedAt: Date | null;
+  summaryText: string | null;
+  completedAt: Date | null;
   reminderSentAt: Date | null;
   followupSentAt: Date | null;
 };

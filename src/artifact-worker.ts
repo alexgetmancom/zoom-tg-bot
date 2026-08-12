@@ -1,20 +1,16 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { ImapFlow } from "imapflow";
 import type { AppConfig } from "./config.js";
-import { buildRawSummaryMarkdown, GitNotesExporter, summaryPayloadHasContent } from "./git-notes.js";
 import { t } from "./i18n.js";
 import { log } from "./logger.js";
 import type { JsonObject, MeetingRecord } from "./models.js";
 import { SUMMARY_EMAIL_MARKERS } from "./parser-lexicon.js";
 import {
   claimWebhookEvent,
-  getMeetingsPendingGitExport,
   getMeetingsPendingSummary,
   getMeetingsPendingTranscript,
   getUserLocale,
   isSummaryEmailProcessed,
-  markGitExported,
-  markGitExportFailed,
   markRecordingCompleted,
   markSummaryEmailProcessed,
   markSummaryFailed,
@@ -23,6 +19,7 @@ import {
   markTranscriptSent,
   type OpenDatabase,
 } from "./storage/database.js";
+import { buildRawSummaryMarkdown, summaryPayloadHasContent } from "./summary.js";
 import { formatDateTimeWithYear, utcNow } from "./time.js";
 import type { ZoomClient } from "./zoom.js";
 
@@ -64,7 +61,6 @@ export class TelegramDeliveryClient {
 export class ArtifactWorker {
   static readonly summaryReadyGraceMinutes = 2;
   private readonly telegram: TelegramDeliveryClient;
-  private readonly gitNotes: GitNotesExporter;
   private readonly summaryEmails: SummaryEmailFetcher;
 
   constructor(
@@ -73,16 +69,11 @@ export class ArtifactWorker {
     private readonly zoom: ZoomClient,
   ) {
     this.telegram = new TelegramDeliveryClient(config);
-    this.gitNotes = new GitNotesExporter(config);
     this.summaryEmails = new SummaryEmailFetcher(config, database);
   }
 
   get imapEnabled(): boolean {
     return this.summaryEmails.enabled;
-  }
-
-  get gitNotesEnabled(): boolean {
-    return this.gitNotes.enabled;
   }
 
   async handleWebhook(rawBody: Uint8Array, headers: Headers): Promise<Response> {
@@ -141,7 +132,6 @@ export class ArtifactWorker {
   async processCycle(): Promise<void> {
     await this.processPendingTranscripts();
     await this.processPendingSummaries();
-    await this.processPendingGitExports();
   }
 
   private verifySignature(rawBody: Uint8Array, headers: Headers): boolean {
@@ -211,30 +201,6 @@ export class ArtifactWorker {
     }
   }
 
-  private async processPendingGitExports(): Promise<void> {
-    if (!this.gitNotes.enabled) return;
-    const timeout = this.config.ARTIFACT_POLL_TIMEOUT_MINUTES * 60_000;
-    for (const record of getMeetingsPendingGitExport(this.database)) {
-      const reference = this.summaryReferenceDate(record);
-      if (Date.now() < reference.getTime() + ArtifactWorker.summaryReadyGraceMinutes * 60_000) continue;
-      try {
-        const payload = await this.fetchSummaryPayload(record);
-        if (payload && summaryPayloadHasContent(payload)) {
-          const result = this.gitNotes.exportSummary(record, payload);
-          markGitExported(this.database, record.recordId, result.notePath, result.commitSha);
-          continue;
-        }
-      } catch (error) {
-        log("warn", "Git note export retry", {
-          recordId: record.recordId,
-          reason: error instanceof Error ? error.name : String(error),
-        });
-        continue;
-      }
-      if (Date.now() - reference.getTime() >= timeout) markGitExportFailed(this.database, record.recordId);
-    }
-  }
-
   private async sendTranscript(record: MeetingRecord): Promise<boolean> {
     const recordings = await this.getRecordings(record);
     const file = findTranscriptFile(recordings);
@@ -258,25 +224,27 @@ export class ArtifactWorker {
   private async sendSummary(record: MeetingRecord): Promise<boolean> {
     const payload = await this.fetchSummaryPayload(record);
     if (payload && summaryPayloadHasContent(payload)) {
+      const document = renderSummaryDocumentFromApi(this.config, record, payload);
       await this.telegram.sendDocument(
         buildSummaryFilename(this.config, record),
-        new TextEncoder().encode(renderSummaryDocumentFromApi(this.config, record, payload)),
+        new TextEncoder().encode(document),
         t(getUserLocale(this.database, ownerId(this.config)), "artifact.summary-caption", { topic: record.topic }),
         "text/markdown",
       );
-      markSummarySent(this.database, record.recordId);
+      markSummarySent(this.database, record.recordId, document);
       log("info", "Summary sent", { recordId: record.recordId, source: "meeting_summary_api" });
       return true;
     }
     const candidate = await this.summaryEmails.findSummaryForMeeting(record);
     if (candidate?.text) {
+      const document = renderSummaryDocument(this.config, record, candidate.text);
       await this.telegram.sendDocument(
         buildSummaryFilename(this.config, record),
-        new TextEncoder().encode(renderSummaryDocument(this.config, record, candidate.text)),
+        new TextEncoder().encode(document),
         t(getUserLocale(this.database, ownerId(this.config)), "artifact.summary-caption", { topic: record.topic }),
         "text/markdown",
       );
-      markSummarySent(this.database, record.recordId);
+      markSummarySent(this.database, record.recordId, document);
       markSummaryEmailProcessed(this.database, candidate.messageKey, record.recordId);
       log("info", "Summary sent", { recordId: record.recordId, source: "summary_email_fallback" });
       return true;

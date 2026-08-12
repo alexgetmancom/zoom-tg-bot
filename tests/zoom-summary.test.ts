@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { loadConfig } from "../src/config.js";
-import { buildRawSummaryMarkdown, summaryPayloadHasContent } from "../src/git-notes.js";
 import { MeetingRequest } from "../src/models.js";
+import { buildRawSummaryMarkdown, summaryPayloadHasContent } from "../src/summary.js";
 import { ZoomClient } from "../src/zoom.js";
 
 const config = loadConfig({ BOT_MODE: "http-only", ZOOM_AUTO_RECORDING: "" });

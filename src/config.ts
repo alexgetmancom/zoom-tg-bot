@@ -72,24 +72,6 @@ const envSchema = z.object({
   ZOOM_IMAP_FOLDER: z.string().default("INBOX"),
   ZOOM_SUMMARY_EMAIL_FROM: z.string().default("no-reply@zoom.us"),
 
-  GIT_NOTES_REPO_URL: z
-    .string()
-    .default("")
-    .transform((value) => value.trim()),
-  GIT_NOTES_BRANCH: z
-    .string()
-    .default("main")
-    .transform((value) => value.trim() || "main"),
-  GIT_NOTES_LOCAL_PATH: z.string().default("./data/meeting-notes"),
-  GIT_AUTHOR_NAME: z
-    .string()
-    .default("Zoom Bot")
-    .transform((value) => value.trim() || "Zoom Bot"),
-  GIT_AUTHOR_EMAIL: z
-    .string()
-    .default("zoom-bot@local")
-    .transform((value) => value.trim() || "zoom-bot@local"),
-
   DEFAULT_MEETING_DURATION_MINUTES: z.coerce.number().int().positive().default(60),
   QUICK_MEETING_DELAY_MINUTES: z.coerce.number().int().nonnegative().default(2),
   DEFAULT_QUICK_MEETING_TOPIC: z.string().default("Quick meeting"),

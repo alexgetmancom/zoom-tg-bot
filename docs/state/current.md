@@ -8,7 +8,7 @@
 - Default bot language: English
 - Optional bot language: Russian, stored in the `user_settings` SQLite table
 - Database: `/home/deploy/telemostbot/data/bot_state.sqlite3`, mounted into the container and kept outside git
-- Meeting notes: `/home/deploy/meeting-notes`, mounted into the container and pushed to the configured notes repository
+- Completed meetings: `completed_at` and the exact Telegram summary document are stored in the `meetings` table
 - Production env: `/home/deploy/telemostbot/.env`
 
 ## Operator checks
@@ -21,4 +21,4 @@ ssh tw-nl 'curl -fsS http://127.0.0.1:8799/healthz && curl -fsS http://127.0.0.1
 
 ## Repository boundaries
 
-The repository contains only the TypeScript runtime, focused tests, configuration examples, and English operator documentation. Secrets, runtime data, raw exports, generated notes, and production databases remain outside git.
+The repository contains only the TypeScript runtime, focused tests, configuration examples, and English operator documentation. Secrets and production databases remain outside git.

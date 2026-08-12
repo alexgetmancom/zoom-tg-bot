@@ -1,6 +1,6 @@
 # zoom-tg-bot
 
-Personal Telegram inline bot for creating Zoom meetings, delivering official Zoom summaries, and exporting meeting notes.
+Personal Telegram inline bot for creating Zoom meetings and delivering official Zoom summaries.
 
 The runtime is TypeScript on Bun inside Docker Compose. It combines grammY, Hono, Zod, Bun SQLite, Zoom Server-to-Server OAuth, and one background worker process.
 
@@ -11,7 +11,7 @@ The runtime is TypeScript on Bun inside Docker Compose. It combines grammY, Hono
 - Upcoming meeting list, history, reminders, follow-ups, cancellation, duplication, and rescheduling
 - Official Zoom summary delivery with an optional IMAP fallback
 - Optional transcript delivery when cloud recording is enabled
-- Optional Git repository export for normalized meeting notes
+- SQLite history with completed-meeting timestamps and delivered summary text
 - English interface by default; Russian is available in bot settings
 
 ## Quick start
@@ -55,4 +55,4 @@ Select a result and press Confirm. Typing a query alone never creates a Zoom mee
 - `tests/` — focused Bun tests
 - `GUIDE.md` — operator guide
 
-Secrets, runtime SQLite files, exports, and meeting-note working trees stay outside git.
+Secrets and runtime SQLite files stay outside git.

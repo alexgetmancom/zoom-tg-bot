@@ -17,7 +17,6 @@ rsync -az --delete \
   --exclude '.pytest_cache' \
   --exclude 'data' \
   --exclude 'exports' \
-  --exclude 'meeting-notes' \
   --exclude 'bot_state.sqlite3' \
   --exclude 'bot_state.sqlite3-shm' \
   --exclude 'bot_state.sqlite3-wal' \

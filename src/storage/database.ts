@@ -25,11 +25,11 @@ const meetingExtraColumns: Record<string, string> = {
   summary_sent_at: "TEXT",
   transcript_failed_at: "TEXT",
   summary_failed_at: "TEXT",
-  git_note_path: "TEXT",
-  git_commit_sha: "TEXT",
-  git_exported_at: "TEXT",
-  git_export_failed_at: "TEXT",
+  summary_text: "TEXT",
+  completed_at: "TEXT",
 };
+
+const obsoleteMeetingColumns = ["git_note_path", "git_commit_sha", "git_exported_at", "git_export_failed_at"];
 
 export function openDatabase(url: string): OpenDatabase {
   const path = url === ":memory:" ? url : resolve(url);
@@ -72,7 +72,9 @@ export function migrateDatabase(database: OpenDatabase): void {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       reminder_sent_at TEXT,
-      followup_sent_at TEXT
+      followup_sent_at TEXT,
+      summary_text TEXT,
+      completed_at TEXT
     );
     CREATE TABLE IF NOT EXISTS webhook_events (
       event_hash TEXT PRIMARY KEY,
@@ -101,6 +103,9 @@ export function migrateDatabase(database: OpenDatabase): void {
     .map((column) => column.name);
   for (const [name, type] of Object.entries(meetingExtraColumns)) {
     if (!columns.includes(name)) database.sqlite.exec(`ALTER TABLE meetings ADD COLUMN ${name} ${type}`);
+  }
+  for (const name of obsoleteMeetingColumns) {
+    if (columns.includes(name)) database.sqlite.exec(`ALTER TABLE meetings DROP COLUMN ${name}`);
   }
 }
 
@@ -296,9 +301,15 @@ export function markRecordingCompleted(
   if (!row) return null;
   database.sqlite
     .query(
-      "UPDATE meetings SET zoom_meeting_uuid = COALESCE(?, zoom_meeting_uuid), recording_status = 'completed', recording_completed_at = ?, updated_at = ? WHERE id = ?",
+      "UPDATE meetings SET zoom_meeting_uuid = COALESCE(?, zoom_meeting_uuid), recording_status = 'completed', recording_completed_at = ?, completed_at = COALESCE(completed_at, ?), updated_at = ? WHERE id = ?",
     )
-    .run(values.zoomMeetingUuid, values.completedAt.toISOString(), utcNow().toISOString(), row.id);
+    .run(
+      values.zoomMeetingUuid,
+      values.completedAt.toISOString(),
+      values.completedAt.toISOString(),
+      utcNow().toISOString(),
+      row.id,
+    );
   return getMeeting(database, row.id);
 }
 
@@ -311,9 +322,18 @@ export function markTranscriptSent(database: OpenDatabase, recordId: number): vo
     .run(now, now, recordId);
 }
 
-export function markSummarySent(database: OpenDatabase, recordId: number): void {
+export function markSummarySent(database: OpenDatabase, recordId: number, summaryText: string): void {
   const now = utcNow().toISOString();
-  database.sqlite.query("UPDATE meetings SET summary_sent_at = ?, updated_at = ? WHERE id = ?").run(now, now, recordId);
+  database.sqlite
+    .query("UPDATE meetings SET summary_sent_at = ?, summary_text = ?, updated_at = ? WHERE id = ?")
+    .run(now, summaryText, now, recordId);
+}
+
+export function markMeetingCompleted(database: OpenDatabase, recordId: number): void {
+  const now = utcNow().toISOString();
+  database.sqlite
+    .query("UPDATE meetings SET completed_at = COALESCE(completed_at, ?), updated_at = ? WHERE id = ?")
+    .run(now, now, recordId);
 }
 
 export function markTranscriptFailed(database: OpenDatabase, recordId: number): void {
@@ -327,27 +347,6 @@ export function markSummaryFailed(database: OpenDatabase, recordId: number): voi
   const now = utcNow().toISOString();
   database.sqlite
     .query("UPDATE meetings SET summary_failed_at = ?, updated_at = ? WHERE id = ?")
-    .run(now, now, recordId);
-}
-
-export function markGitExported(
-  database: OpenDatabase,
-  recordId: number,
-  notePath: string,
-  commitSha: string | null,
-): void {
-  const now = utcNow().toISOString();
-  database.sqlite
-    .query(
-      "UPDATE meetings SET git_note_path = ?, git_commit_sha = ?, git_exported_at = ?, git_export_failed_at = NULL, updated_at = ? WHERE id = ?",
-    )
-    .run(notePath, commitSha, now, now, recordId);
-}
-
-export function markGitExportFailed(database: OpenDatabase, recordId: number): void {
-  const now = utcNow().toISOString();
-  database.sqlite
-    .query("UPDATE meetings SET git_export_failed_at = ?, updated_at = ? WHERE id = ?")
     .run(now, now, recordId);
 }
 
@@ -431,15 +430,6 @@ export function getMeetingsPendingSummary(database: OpenDatabase): MeetingRecord
     .map(rowToMeeting);
 }
 
-export function getMeetingsPendingGitExport(database: OpenDatabase): MeetingRecord[] {
-  return database.sqlite
-    .query<RawMeetingRow, []>(
-      "SELECT * FROM meetings WHERE status = 'scheduled' AND git_exported_at IS NULL AND git_export_failed_at IS NULL ORDER BY start_time ASC",
-    )
-    .all()
-    .map(rowToMeeting);
-}
-
 export function markReminderSent(database: OpenDatabase, recordId: number): void {
   const now = utcNow().toISOString();
   database.sqlite
@@ -476,10 +466,8 @@ type RawMeetingRow = {
   summary_sent_at: string | null;
   transcript_failed_at: string | null;
   summary_failed_at: string | null;
-  git_note_path: string | null;
-  git_commit_sha: string | null;
-  git_exported_at: string | null;
-  git_export_failed_at: string | null;
+  summary_text: string | null;
+  completed_at: string | null;
   reminder_sent_at: string | null;
   followup_sent_at: string | null;
 };
@@ -509,10 +497,8 @@ function rowToMeeting(row: RawMeetingRow): MeetingRecord {
     summarySentAt: row.summary_sent_at ? new Date(row.summary_sent_at) : null,
     transcriptFailedAt: row.transcript_failed_at ? new Date(row.transcript_failed_at) : null,
     summaryFailedAt: row.summary_failed_at ? new Date(row.summary_failed_at) : null,
-    gitNotePath: row.git_note_path,
-    gitCommitSha: row.git_commit_sha,
-    gitExportedAt: row.git_exported_at ? new Date(row.git_exported_at) : null,
-    gitExportFailedAt: row.git_export_failed_at ? new Date(row.git_export_failed_at) : null,
+    summaryText: row.summary_text,
+    completedAt: row.completed_at ? new Date(row.completed_at) : null,
     reminderSentAt: row.reminder_sent_at ? new Date(row.reminder_sent_at) : null,
     followupSentAt: row.followup_sent_at ? new Date(row.followup_sent_at) : null,
   };

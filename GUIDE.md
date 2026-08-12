@@ -50,7 +50,7 @@ The database defaults to `./data/bot_state.sqlite3`. It stores pending inline ac
 
 The bot uses Zoom Server-to-Server OAuth and creates normal or recurring meetings through the Zoom API. It requests Zoom's native Google Calendar push; it does not write to Google Calendar directly.
 
-For summaries, enable the Zoom Meeting Summary API and set `ZOOM_WEBHOOK_SECRET_TOKEN`. The artifact worker accepts Zoom webhooks, polls the summary API, delivers official summaries to Telegram, and can export notes through `GIT_NOTES_REPO_URL`.
+For summaries, enable the Zoom Meeting Summary API and set `ZOOM_WEBHOOK_SECRET_TOKEN`. The artifact worker accepts Zoom webhooks, polls the summary API, sends the exact Markdown document to Telegram, and stores that document in SQLite with the meeting completion timestamp.
 
 Cloud recording is disabled by default. Set `ZOOM_AUTO_RECORDING=cloud` only when transcript delivery is needed. IMAP is an optional fallback for summary emails and is enabled only when all IMAP credentials are present.
 
@@ -70,15 +70,9 @@ bun run dev
 
 `bun run check` runs Biome, strict TypeScript, Bun tests, and the production build.
 
-Historical export is available when needed:
-
-```bash
-bun run start:export -- --from 2026-04-01 --to 2026-04-10
-```
-
 ## Production
 
-The VPS production runtime is one Docker Compose `app` container from `/home/deploy/telemostbot`. The container reads secrets from `/home/deploy/telemostbot/.env`, stores SQLite in `/home/deploy/telemostbot/data`, and mounts `/home/deploy/meeting-notes` for Git note export. The host port remains `8799`.
+The VPS production runtime is one Docker Compose `app` container from `/home/deploy/telemostbot`. The container reads secrets from `/home/deploy/telemostbot/.env` and stores SQLite in `/home/deploy/telemostbot/data`. The host port remains `8799`.
 
 The production container must be healthy after a deploy:
 
@@ -93,6 +87,6 @@ docker compose logs --tail=100 app
 
 ## Boundaries
 
-- Never commit `.env`, OAuth credentials, Telegram tokens, SQLite files, raw exports, or generated meeting notes.
+- Never commit `.env`, OAuth credentials, Telegram tokens, or SQLite files.
 - The repository contains only the TypeScript runtime, tests, examples, and operator documentation.
 - Russian UI copy belongs in the Russian locale catalog. English is the source locale and the default.

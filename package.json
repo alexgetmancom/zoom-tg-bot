@@ -10,7 +10,6 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "start": "bun dist/src/index.js",
-    "start:export": "bun dist/src/export-summaries.js",
     "start:create-link": "bun dist/src/create-link.js",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",

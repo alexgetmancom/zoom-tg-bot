@@ -26,6 +26,7 @@ import {
   listUpcomingMeetings,
   markFollowupSent,
   markMeetingCancelled,
+  markMeetingCompleted,
   markReminderSent,
   type OpenDatabase,
   popPendingAction,
@@ -354,6 +355,7 @@ export async function runReminderCycle(runtime: BotRuntime): Promise<void> {
         },
       );
       markFollowupSent(database, record.recordId);
+      markMeetingCompleted(database, record.recordId);
       log("info", "Follow-up sent", { recordId: record.recordId });
     } catch (error) {
       log("warn", "Follow-up send failed", { recordId: record.recordId, error });

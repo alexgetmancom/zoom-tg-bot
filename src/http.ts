@@ -37,7 +37,6 @@ export function createHttpApp(
       status: "ok",
       meeting_summary_api_enabled: true,
       imap_enabled: artifactWorker.imapEnabled,
-      git_notes_enabled: artifactWorker.gitNotesEnabled,
     }),
   );
   app.post(config.ZOOM_WEBHOOK_PATH, async (context) =>

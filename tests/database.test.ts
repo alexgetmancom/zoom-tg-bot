@@ -4,6 +4,8 @@ import { MeetingRequest, PendingAction } from "../src/models.js";
 import {
   getMeeting,
   getUserLocale,
+  markMeetingCompleted,
+  markSummarySent,
   migrateDatabase,
   openDatabase,
   popPendingAction,
@@ -45,6 +47,11 @@ describe("SQLite state", () => {
       recordingStatus: "disabled",
     });
     expect(getMeeting(database, record.recordId)?.zoomMeetingId).toBe("123");
+    markSummarySent(database, record.recordId, "# Demo summary");
+    markMeetingCompleted(database, record.recordId);
+    const stored = getMeeting(database, record.recordId);
+    expect(stored?.summaryText).toBe("# Demo summary");
+    expect(stored?.completedAt).toBeInstanceOf(Date);
     database.close();
   });
 
